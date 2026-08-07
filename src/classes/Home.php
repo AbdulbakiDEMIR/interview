@@ -6,11 +6,24 @@ class Home
     {
         global $smarty;
 
-        $games = [
-            1 => 'Game 1',
-            2 => 'Game 2',
-            3 => 'Game 3',
-        ];
+        try {
+            // 1. API İstemcisini Başlat
+            $apiClient = new \Turkpin\InterviewTest\classes\TurkpinApiClient();
+
+            // 2. Oyun Sınıfını Başlat (İçine API istemcisini ver)
+            $gameManager = new \Turkpin\InterviewTest\classes\Game($apiClient);
+
+            // 3. Oyunları Çek
+            $games = $gameManager->getAllGames();
+        } catch (\Exception $e) {
+            error_log(date('Y-m-d H:i:s') . " - HATA: " . $e->getMessage() . "\n", 3, __DIR__ . '/../../api_error.log');
+            http_response_code(500);
+            $games = [];
+
+            // Gerçek hatayı da mesaja ekliyoruz!
+            $smarty->assign('api_error', 'Oyun listesi yüklenirken bir sorun oluştu: ' . $e->getMessage());
+        }
+
 
         $products = [
             [
