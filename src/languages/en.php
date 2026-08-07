@@ -14,4 +14,12 @@ $lang = [
     'quantity' => 'Quantity',
     'price' => 'Price',
     'buy' => 'Buy',
+    'error' => 'Error',
+    'select_game' => 'Select Game',
+    'choose_game' => 'Please select a game above to see the products.',
+    'games_load_error' => 'An error occurred while loading games: ',
+    'error_occurred' => 'Error Occurred!',
+    'connection_error' => 'Connection Error!',
+    'no_products_found' => 'No products found for this game.',
+    'ajax_error' => 'AJAX Error:',
 ];

@@ -3,7 +3,7 @@
 <div id="apiToast" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 250px; font-size: 0.9rem;"
     class="alert alert-danger shadow d-flex justify-content-between align-items-top">
     <div>
-        <strong>Hata:</strong> {$api_error}
+        <strong>{$LANG.error}:</strong> {$api_error}
     </div>
     <button type="button" class="btn-close ms-3 " aria-label="Kapat"
         onclick="document.getElementById('apiToast').remove()" style="font-size: 0.75rem; cursor: pointer;">
@@ -14,11 +14,9 @@
 
 <div class="row">
     <div class="col-auto">
-        <select class="form-select" id="games" onchange="this.form.submit()">
-            <option value="0" {if $game==0}selected{/if}>{$LANG.all_games}</option>
-            {foreach $games as $game_id => $game_name}
-            <option value="{$game_id}" {if $game==$game_id}selected{/if}>{$game_name}</option>
-            {/foreach}
+        <!-- onchange parametresini kaldırdık -->
+        <select class="form-select" id="games">
+            <option value="">{$LANG.select_game}</option>
         </select>
     </div>
 </div>
@@ -34,18 +32,109 @@
             </tr>
         </thead>
         <tbody>
-            {foreach $products as $product}
             <tr>
-                <td>{$product.name}</td>
-                <td>{$product.stock}</td>
-                <td>{$product.price}</td>
-                <td>
-                    <input name="quantity" type="number" class="form-control" value="1" min="{$product.min_order}"
-                        max="{$product.max_order}" id="quantity_{$product.id}">
+                <td colspan="4" class="text-center text-muted">
+                    <i class="bi bi-arrow-up-circle me-2">{$LANG.choose_game}</i>
                 </td>
             </tr>
-            {/foreach}
         </tbody>
     </table>
     <button type="button" class="btn btn-primary" onclick="addProducts()">{$LANG.buy}</button>
 </div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Değişkenlerimizi en tepede bir kez tanımlıyoruz
+        const gamesSelect = document.getElementById('games');
+        const tbody = document.querySelector('.table tbody');
+
+        // ==========================================
+        // 1. OYUNLARI ÇEKME KISMI
+        // ==========================================
+        fetch('/api/games')
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    gamesSelect.innerHTML = '<option value="">{$LANG.select_game}</option>';
+                    for (const [id, name] of Object.entries(result.data)) {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.textContent = name;
+                        gamesSelect.appendChild(option);
+                    }
+                } else {
+                    alert('{$LANG.games_load_error}' + result.message);
+                    gamesSelect.innerHTML = '<option value="">{$LANG.error_occurred}</option>';
+                }
+            })
+            .catch(error => {
+                console.error('{$LANG.ajax_error}', error);
+                gamesSelect.innerHTML = '<option value="">{$LANG.connection_error}</option>';
+            });
+
+        // ==========================================
+        // 2. OYUN SEÇİLİNCE ÜRÜNLERİ ÇEKME KISMI
+        // ==========================================
+        gamesSelect.addEventListener('change', function () {
+            const gameId = this.value;
+            tbody.innerHTML = ''; // Tabloyu temizle
+
+            if (!gameId) {
+                // Kullanıcı seçimi temizlerse, uyarı mesajını tekrar göster
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted"><i class="bi bi-arrow-up-circle me-2">{$LANG.choose_game}</i></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML =
+                '<tr class="placeholder-glow">' +
+                '<td><span class="placeholder col-8"></span></td>' +
+                '<td><span class="placeholder col-4"></span></td>' +
+                '<td><span class="placeholder col-6"></span></td>' +
+                '<td><span class="placeholder col-12 bg-secondary" style="height: 38px; border-radius: 6px;"></span></td>' +
+                '</tr>' +
+                '<tr class="placeholder-glow">' +
+                '<td><span class="placeholder col-6"></span></td>' +
+                '<td><span class="placeholder col-3"></span></td>' +
+                '<td><span class="placeholder col-5"></span></td>' +
+                '<td><span class="placeholder col-12 bg-secondary" style="height: 38px; border-radius: 6px;"></span></td>' +
+                '</tr>' +
+                '<tr class="placeholder-glow">' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td><span class="placeholder col-4"></span></td>' +
+                '<td><span class="placeholder col-4"></span></td>' +
+                '<td><span class="placeholder col-12 bg-secondary" style="height: 38px; border-radius: 6px;"></span></td>' +
+                '</tr>';
+
+
+            fetch('/api/products?game_id=' + gameId)
+                .then(response => response.json())
+                .then(result => {
+                    tbody.innerHTML = ''; // Yükleniyor yazısını sil
+
+                    if (result.success && result.data.length > 0) {
+                        result.data.forEach(product => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML =
+                                '<td>' + product.name + '</td>' +
+                                '<td>' + product.stock + '</td>' +
+                                '<td>' + product.price + ' TL</td>' +
+                                '<td>' +
+                                '<input name="quantity" type="number" class="form-control" value="1" ' +
+                                'min="' + product.min_order + '" max="' + product.max_order + '" id="quantity_' + product.id + '">' +
+                                '</td>';
+                            tbody.appendChild(tr);
+                        });
+                    } else if (result.success && result.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">{$LANG.no_products_found}</td></tr>';
+                    } else {
+                        alert('{$LANG.error}: ' + result.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('{$LANG.ajax_error}', error);
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center">{$LANG.connection_error}</td></tr>';
+                });
+        });
+    });
+</script>

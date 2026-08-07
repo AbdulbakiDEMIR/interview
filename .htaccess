@@ -1,0 +1,8 @@
+# Projede kullanılan "Bramus Router" paketinin (yani /api/games gibi sanal URL'lerin)
+# çalışabilmesi için tüm gelen isteklerin fiziksel dosya veya klasör olmadığı sürece
+# ana giriş dosyamız olan index.php'ye yönlendirilmesini sağlıyoruz.
+# Bu sayede 404 Not Found hatası almak yerine, rotalarımızı (Route) PHP ile yönetebiliyoruz.
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
