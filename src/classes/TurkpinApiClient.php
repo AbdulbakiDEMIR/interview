@@ -99,7 +99,7 @@ class TurkpinApiClient
     {
         $xml = "<APIRequest>\n";
         $xml .= "    <params>\n";
-        $xml .= "        <cmd>" . $cmd . "das" . "</cmd>\n";
+        $xml .= "        <cmd>" . $cmd . "</cmd>\n";
         $xml .= "        <username>" . $this->username . "</username>\n";
         $xml .= "        <password>" . $this->password . "</password>\n";
         foreach ($params as $key => $value) {
