@@ -43,6 +43,14 @@ class Main
             $home->index();
         });
 
+        $this->router->get('/api/games', function () {
+            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api->getGames();
+        });
+        $this->router->get('/api/products', function () {
+            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api->getProducts();
+        });
         $this->router->run();
         $smarty->display('index.html');
     }
