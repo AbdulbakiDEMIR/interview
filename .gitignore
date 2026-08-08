@@ -11,3 +11,5 @@
 
 /api_error.log
 
+/.phpunit.result.cache
+
