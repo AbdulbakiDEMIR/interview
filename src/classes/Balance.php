@@ -6,9 +6,9 @@ class Balance
     private TurkpinApiClient $apiClient;
 
     // Dependency Injection: Balance sınıfı başlarken ona bir API İstemcisi veriyoruz
-    public function __construct()
+    public function __construct(?TurkpinApiClient $apiClient = null)
     {
-        $this->apiClient = new TurkpinApiClient();
+        $this->apiClient = $apiClient ?? new TurkpinApiClient();
     }
 
 
