@@ -1,0 +1,73 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-wallet2 me-2 text-primary"></i>{$LANG.balance_info}</h2>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-5">
+    <!-- Mevcut Bakiye -->
+    <div class="col">
+        <div class="card h-100 shadow-sm border-0 border-start border-success border-4 rounded-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted fw-bold small text-uppercase">{$LANG.current_balance}</span>
+                    <div class="bg-success bg-opacity-10 text-success rounded-circle p-2 d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px;">
+                        <i class="bi bi-cash-coin fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-success mb-0">{$balanceData['balance']|number_format:2:',':'.'} <span
+                        class="fs-6 text-muted fw-normal">{$LANG.currency_tl}</span></h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kredi -->
+    <div class="col">
+        <div class="card h-100 shadow-sm border-0 border-start border-info border-4 rounded-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted fw-bold small text-uppercase">{$LANG.credit_limit}</span>
+                    <div class="bg-info bg-opacity-10 text-info rounded-circle p-2 d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px;">
+                        <i class="bi bi-credit-card fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0">{$balanceData['credit']|number_format:2:',':'.'} <span
+                        class="fs-6 text-muted fw-normal">{$LANG.currency_tl}</span></h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bonus -->
+    <div class="col">
+        <div class="card h-100 shadow-sm border-0 border-start border-warning border-4 rounded-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted fw-bold small text-uppercase">{$LANG.bonus_balance}</span>
+                    <div class="bg-warning bg-opacity-10 text-warning rounded-circle p-2 d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px;">
+                        <i class="bi bi-gift fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0">{$balanceData['bonus']|number_format:2:',':'.'} <span
+                        class="fs-6 text-muted fw-normal">{$LANG.currency_tl}</span></h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Harcama -->
+    <div class="col">
+        <div class="card h-100 shadow-sm border-0 border-start border-primary border-4 rounded-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted fw-bold small text-uppercase">{$LANG.total_spending}</span>
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px;">
+                        <i class="bi bi-cart-check fs-5"></i>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-0">{$balanceData['spending']|number_format:2:',':'.'} <span
+                        class="fs-6 text-muted fw-normal">{$LANG.currency_tl}</span></h3>
+            </div>
+        </div>
+    </div>
+</div>

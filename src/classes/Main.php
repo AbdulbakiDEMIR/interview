@@ -1,7 +1,4 @@
 <?php
-
-require_once 'home.php';
-
 class Main
 {
     public $router;
@@ -21,6 +18,9 @@ class Main
 
         require_once __DIR__ . "/../languages/{$lang}.php";
 
+        // Hata yöneticisini başlat
+        set_exception_handler(['\App\Handlers\ExceptionHandler', 'handle']);
+
         $smarty = new Smarty\Smarty();
         $this->router = new \Bramus\Router\Router();
 
@@ -38,51 +38,71 @@ class Main
     {
         global $smarty;
 
-        $this->router->get('/', function () {
-            $home = new Home();
-            $home->index();
-        });
 
+        //apiler
         $this->router->get('/api/games', function () {
-            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api = new \App\classes\Api();
             $api->getGames();
         });
+
+        $this->router->get('/api/balance', function () {
+            $api = new \App\classes\Api();
+            $api->getBalance();
+        });
+
         $this->router->get('/api/products', function () {
-            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api = new \App\classes\Api();
             $api->getProducts();
         });
 
         $this->router->get('/api/product', function () {
-            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api = new \App\classes\Api();
             $api->getProductsByProductId();
         });
 
         $this->router->get('/api/orders', function () {
-            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api = new \App\classes\Api();
             $api->getOrders();
         });
 
         $this->router->post('/api/orders', function () {
-            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api = new \App\classes\Api();
             $api->createOrder();
         });
 
+
+        $this->router->get('/api/order/(\d+)', function ($orderId) {
+            $api = new \App\classes\Api();
+            $api->getOrderStatus($orderId);
+        });
+
+
+
+        //sayfalar
+        $this->router->get('/', function () {
+            global $smarty;
+            $smarty->assign('template', 'home.html');
+        });
+
+        $this->router->get('/balance', function () {
+            global $smarty;
+
+            $balanceManager = new \App\classes\Balance();
+            $balanceData = $balanceManager->getBalance();
+
+            $smarty->assign('balanceData', $balanceData);
+            $smarty->assign('template', 'balance.html');
+        });
 
         $this->router->get('/orders', function () {
             global $smarty;
             $smarty->assign('template', 'orders.html');
         });
 
-        $this->router->get('/api/order/(\d+)', function ($orderId) {
-            $api = new \Turkpin\InterviewTest\classes\Api();
-            $api->getOrderStatus($orderId);
-        });
-
         $this->router->get('/order/(\d+)', function ($orderId) {
             global $smarty;
 
             $smarty->assign('orderId', $orderId);
-
             $smarty->assign('template', 'order_detail.html');
         });
 

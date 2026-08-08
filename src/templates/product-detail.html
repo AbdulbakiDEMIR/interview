@@ -1,4 +1,28 @@
 <div class="container py-5" id="product-container">
+    <!-- Skeleton Loading -->
+    <div class="row">
+        <div class="col-md-5 mb-4">
+            <div class="bg-secondary bg-opacity-10 rounded placeholder-glow d-flex align-items-center justify-content-center"
+                style="height: 400px;">
+                <span class="placeholder col-6 h-50 rounded-circle"></span>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="placeholder-glow">
+                <h2 class="placeholder col-8 mb-4 rounded" style="height: 40px;"></h2>
+                <h4 class="placeholder col-4 mb-5 rounded" style="height: 30px;"></h4>
+                <div class="card border-0 mb-4 bg-light">
+                    <div class="card-body">
+                        <p class="placeholder col-12 mb-2"></p>
+                        <p class="placeholder col-12 mb-2"></p>
+                    </div>
+                </div>
+                <div class="mt-5">
+                    <span class="placeholder col-5 rounded bg-primary" style="height: 50px;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -8,33 +32,6 @@
         const gameId = '{$gameId}';
         const productId = '{$productId}';
         const container = document.getElementById('product-container');
-
-        // SKELETON LOADING INJECTION
-        container.innerHTML = `
-            <div class="row">
-                <div class="col-md-5 mb-4">
-                    <div class="bg-secondary bg-opacity-10 rounded placeholder-glow d-flex align-items-center justify-content-center"
-                        style="height: 400px;">
-                        <span class="placeholder col-6 h-50 rounded-circle"></span>
-                    </div>
-                </div>
-                <div class="col-md-7">
-                    <div class="placeholder-glow">
-                        <h2 class="placeholder col-8 mb-4 rounded" style="height: 40px;"></h2>
-                        <h4 class="placeholder col-4 mb-5 rounded" style="height: 30px;"></h4>
-                        <div class="card border-0 mb-4 bg-light">
-                            <div class="card-body">
-                                <p class="placeholder col-12 mb-2"></p>
-                                <p class="placeholder col-12 mb-2"></p>
-                            </div>
-                        </div>
-                        <div class="mt-5">
-                            <span class="placeholder col-5 rounded bg-primary" style="height: 50px;"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
 
         fetch('/api/product?game_id=' + gameId + '&product_id=' + productId)
             .then(response => response.json())
@@ -120,24 +117,28 @@
                                 </div>
 
                                 <div class="d-grid gap-2 d-md-flex">
-                                    <button class="btn btn-primary btn-lg px-5 shadow-sm" type="button" onclick="placeOrder()">
+                                    <button id="buy-button" class="btn btn-primary btn-lg px-5 shadow-sm" type="button" onclick="createOrder()">
                                         <i class="bi bi-cart-check me-2"></i>{$LANG.buy}
                                     </button>
                                 </div>
                             </div>
                         </div>
                     `;
+                } else if (result.message) {
+                    showToast(result.message, 'danger');
                 } else {
-                    container.innerHTML = '<div class="alert alert-warning">{$LANG.no_products_found}</div>';
+                    showToast('{$LANG.no_products_found}', 'warning');
                 }
             })
             .catch(error => {
+                showToast(error, 'danger');
                 console.error('API Error:', error);
-                container.innerHTML = '<div class="alert alert-danger">{$LANG.connection_error}</div>';
             });
     });
 
-    function placeOrder() {
+    function createOrder() {
+        document.getElementById('buy-button').disabled = true;
+
         const gameId = '{$gameId}';
         const productId = '{$productId}';
         let amount = document.getElementById('p-quantity').value;
@@ -168,14 +169,54 @@
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    window.location.href = '/orders';
+                    console.log(result);
+                    showSuccessModal(result.data.siparisNo);
                 } else {
-                    alert(result.message);
+                    showToast(result.message);
                 }
             })
             .catch(error => {
-                console.error('API Error:', error);
-                alert('{$LANG.connection_error}');
+                showToast('{$LANG.connection_error}', 'danger');
+            })
+            .finally(() => {
+                document.getElementById('buy-button').disabled = false;
             });
+    }
+
+
+    function showSuccessModal(order_id) {
+        hideModal();
+
+        const bodyHtml = '<div class="text-center my-4">' +
+            '    <div class="d-flex justify-content-center mb-3">' +
+            '        <div class="bg-success bg-opacity-10 rounded-circle p-3">' +
+            '            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>' +
+            '        </div>' +
+            '    </div>' +
+            '    <h4 class="fw-bold text-success mb-2">{$LANG.order_success}</h4>' +
+            '    <p class="text-muted mb-0" style="font-size: 0.95rem;">' +
+            '        {$LANG.order_success_description}' +
+            '    </p>' +
+            '</div>' +
+            '' +
+            '<div class="card bg-light border-0 rounded-3 mt-3">' +
+            '    <div class="card-body">' +
+            '        <div class="d-flex align-items-center justify-content-between">' +
+            '            <div>' +
+            '                <strong class="text-primary fw-bold fs-5">#' + order_id + '</strong>' +
+            '            </div>' +
+            '        </div>' +
+            '    </div>' +
+            '</div>';
+
+        const footerHtml = '<a href="/order/' + order_id + '" class="btn btn-outline-primary">{$LANG.view_order}</a>' +
+            ' <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{$LANG.close}</button>';
+
+        showModal({
+            title: '<span class="text-success fw-bold">' + '{$LANG.order_success}' + '</span>',
+            body: bodyHtml,
+            footer: footerHtml,
+            size: 'md' // Orta boyutta modal
+        });
     }
 </script>

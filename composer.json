@@ -2,7 +2,7 @@
 	"name": "turkpin/interview-test",
 	"autoload": {
 		"psr-4": {
-			"Turkpin\\InterviewTest\\": "src/"
+			"App\\": "src/"
 		}
 	},
 	"authors": [

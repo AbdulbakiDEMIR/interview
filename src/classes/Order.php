@@ -1,100 +1,123 @@
 <?php
-namespace Turkpin\InterviewTest\classes;
+namespace App\classes;
+
+use App\Exceptions\TurkpinApiException;
 
 class Order
 {
     private TurkpinApiClient $apiClient;
 
-    public function __construct(TurkpinApiClient $apiClient)
+    public function __construct(?TurkpinApiClient $apiClient = null)
     {
-        $this->apiClient = $apiClient;
+        $this->apiClient = $apiClient ?? new TurkpinApiClient();
     }
 
+    // ==========================================
+    // ANA METOTLAR
+    // ==========================================
+
+
+    //Belirli bir tarih aralığındaki siparişleri getirir.
     public function getOrders(string $startDate, string $endDate): array
     {
-        $response = $this->apiClient->execute('siparisListesi', ['baslangicTarihi' => $startDate, 'bitisTarihi' => $endDate]);
+        $response = $this->apiClient->execute('siparisListesi', [
+            'baslangicTarihi' => $startDate,
+            'bitisTarihi' => $endDate
+        ]);
 
-        $formattedOrders = [];
+        $ordersData = $response['params']['SIPARISLER']['SIPARIS'] ?? ($response['SIPARIS'] ?? []);
 
-
-        // API'den dönen cevabın içerisindeki 'SIPARISLER' yapısını arıyoruz
-        if (isset($response['params']['SIPARISLER']['SIPARIS']) || isset($response['SIPARIS'])) {
-            $ordersData = $response['params']['SIPARISLER']['SIPARIS'] ?? ($response['SIPARIS'] ?? []);
-
-            // Eğer sadece 1 sipariş dönerse XML parser bunu tek boyutlu dizi yapar. Düzeltiyoruz:
-            // Anahtarı 'id' değil 'SIPARIS_NO' olarak kontrol etmeliyiz!
-            if (isset($ordersData['SIPARIS_NO'])) {
-                $ordersData = [$ordersData];
-            }
-
-            foreach ($ordersData as $order) {
-                $formattedOrders[] = [
-                    'SIPARIS_NO' => $order['SIPARIS_NO'] ?? 0,
-                    'SIPARIS_DURUMU' => $order['SIPARIS_DURUMU'] ?? 'Bilinmiyor',
-                    'KONTROL_TARIHI' => $order['KONTROL_TARIHI'] ?? '-',
-                    'SIPARIS_DURUMU_ACIKLAMA' => $order['SIPARIS_DURUMU_ACIKLAMA'] ?? 'Açıklama Yok',
-                    'SIPARIS_TUTARI' => $order['SIPARIS_TUTARI'] ?? 0,
-                    'EXTRA' => $order['EXTRA'] ?? '',
-                    'EPIN_LIST' => $order['epin_list']['epin'] ?? []
-                ];
-            }
+        if (empty($ordersData)) {
+            return [];
         }
 
+        // Tek bir sipariş döndüğünde diziye sarıyoruz
+        if (isset($ordersData['SIPARIS_NO'])) {
+            $ordersData = [$ordersData];
+        }
 
-        return $formattedOrders;
+        return array_map([$this, 'formatOrder'], $ordersData);
     }
 
+    //Tek bir siparişin güncel durumunu sorgular.
     public function getOrderStatus(string $orderId): array
     {
-        // Turkpin API'sine 'siparisDurumu' komutu ve ilgili sipariş numarası ile istek atıyoruz
         $response = $this->apiClient->execute('siparisDurumu', ['siparisNo' => $orderId]);
-
-        // Yanıt XML parser'dan bazen ['params'] içinde bazen direkt kökte gelebilir
         $data = $response['params'] ?? $response;
 
-
-        if (isset($data['SIPARIS_NO'])) {
-            return [
-                'SIPARIS_NO' => $data['SIPARIS_NO'] ?? $orderId,
-                'SIPARIS_DURUMU' => $data['SIPARIS_DURUMU'] ?? 'Bilinmiyor',
-                'KONTROL_TARIHI' => $data['KONTROL_TARIHI'] ?? '-',
-                'SIPARIS_DURUMU_ACIKLAMA' => $data['SIPARIS_DURUMU_ACIKLAMA'] ?? 'Açıklama Yok',
-                'SIPARIS_TUTARI' => $data['SIPARIS_TUTARI'] ?? 0,
-                'EPIN_LIST' => $data['epin_list']['epin'] ?? []
-            ];
+        if (!isset($data['SIPARIS_NO'])) {
+            throw new TurkpinApiException("Sipariş verisine ulaşılamadı veya sipariş bulunamadı.", 'ORDER_NOT_FOUND');
         }
-        throw new \Exception("Sipariş verisine ulaşılamadı.");
+
+        return $this->formatOrder($data);
     }
 
-    public function buyProduct(int $gameId, int $productId, int $amount, string $user, bool $pre_order = false, ?float $barem = null)
-    {
-        // 1. Ortak parametreleri bir dizi içinde topla
+    //Yeni bir E-Pin siparişi oluşturur.
+    public function buyProduct(
+        int $gameId,
+        int $productId,
+        int $amount,
+        string $user,
+        bool $preOrder = false,
+        ?float $barem = null
+    ): array {
         $params = [
-            "oyunKodu" => $gameId,
-            "urunKodu" => $productId,
-            "adet" => $amount,
-            "character" => $user,
+            'oyunKodu' => $gameId,
+            'urunKodu' => $productId,
+            'adet' => $amount,
+            'character' => $user,
         ];
 
-        // Ön sipariş ise ek parametre göndermek gerekiyorsa (opsiyonel)
-        if ($pre_order) {
-            $params["pre_order"] = true;
+        if ($preOrder) {
+            $params['pre_order'] = true;
         }
 
-        // 2. Barem varsa, parametrelere ekle ve adedi 1'e sabitle
-        if (!is_null($barem)) {
-            $params["adet"] = 1;
-            $params["barem"] = $barem;
+        if ($barem !== null) {
+            $params['adet'] = 1;
+            $params['barem'] = $barem;
         }
 
-        // 3. Tek bir execute komutuyla gönder
-        $response = $this->apiClient->execute("epinSiparisYarat", $params);
+        $response = $this->apiClient->execute('epinSiparisYarat', $params);
 
-        $formattedOrder = [];
-        if (isset($response['params']['epinSiparisSonuc'])) {
-            $formattedOrder[] = $response['params']['epinSiparisSonuc'];
+        return $response['params']['epinSiparisSonuc'] ?? $response['params'] ?? [];
+    }
+
+    // ==========================================
+    // YARDIMCI FORMATLAMA METOTLARI
+    // ==========================================
+
+    //Ham sipariş verisini standart anahtarlara ve tiplere dönüştürür.
+    private function formatOrder(array $order): array
+    {
+        // EXTRA alanı boş XML tag'i olduğunda dizi olarak gelir, kontrol ediyoruz:
+        $extra = '';
+        if (isset($order['EXTRA'])) {
+            $extra = is_array($order['EXTRA']) ? '' : (string) $order['EXTRA'];
         }
 
-        return $formattedOrder;
+        return [
+            'SIPARIS_NO' => (string) ($order['SIPARIS_NO'] ?? ''),
+            'SIPARIS_DURUMU' => (string) ($order['SIPARIS_DURUMU'] ?? 'Bilinmiyor'),
+            'KONTROL_TARIHI' => (string) ($order['KONTROL_TARIHI'] ?? '-'),
+            'SIPARIS_DURUMU_ACIKLAMA' => (string) ($order['SIPARIS_DURUMU_ACIKLAMA'] ?? 'Açıklama Yok'),
+            'SIPARIS_TUTARI' => (float) ($order['SIPARIS_TUTARI'] ?? 0.0),
+            'EXTRA' => $extra,
+            'EPIN_LIST' => $this->normalizeEpinList($order['epin_list']['epin'] ?? [])
+        ];
+    }
+
+    //E-Pin listesini tekil veya boş dönse dahi standart liste dizisine çevirir.
+    private function normalizeEpinList($epinData): array
+    {
+        if (empty($epinData)) {
+            return [];
+        }
+
+        // Tek bir pin döndüğünde associative array gelebilir, düzeltiyoruz
+        if (is_array($epinData) && !isset($epinData[0])) {
+            return [$epinData];
+        }
+
+        return is_array($epinData) ? $epinData : [$epinData];
     }
 }

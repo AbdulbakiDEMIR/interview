@@ -1,15 +1,21 @@
 <?php
-namespace Turkpin\InterviewTest\classes;
+namespace App\classes;
 
 class Game
 {
     private TurkpinApiClient $apiClient;
 
     // Dependency Injection: Game sınıfı başlarken ona bir API İstemcisi veriyoruz
-    public function __construct(TurkpinApiClient $apiClient)
+    public function __construct()
     {
-        $this->apiClient = $apiClient;
+        $this->apiClient = new TurkpinApiClient();
     }
+
+
+    // ==========================================
+    // ANA METOTLAR
+    // ==========================================
+
 
     public function getAllGames()
     {

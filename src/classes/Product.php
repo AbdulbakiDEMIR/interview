@@ -1,102 +1,92 @@
 <?php
-namespace Turkpin\InterviewTest\classes;
+namespace App\classes;
 
 class Product
 {
     private TurkpinApiClient $apiClient;
 
-    public function __construct(TurkpinApiClient $apiClient)
+    public function __construct(?TurkpinApiClient $apiClient = null)
     {
-        $this->apiClient = $apiClient;
+        $this->apiClient = $apiClient ?? new TurkpinApiClient();
     }
 
+    // ==========================================
+    // ANA METOTLAR
+    // ==========================================
+
+    //Belirli bir oyuna ait tüm ürünleri getirir.
     public function getProductsByGameId(int $gameId): array
     {
-        // İstekte oyunKodu'nu yollayarak o oyuna ait ürünleri çekiyoruz
         $response = $this->apiClient->execute('epinUrunleri', ['oyunKodu' => $gameId]);
-
-        $formattedProducts = [];
-
-        if (isset($response['params']['epinUrunListesi']['urun'])) {
-            $productsData = $response['params']['epinUrunListesi']['urun'];
-
-
-            // Eğer sadece 1 ürün dönerse XML parser bunu tek boyutlu dizi yapar. Düzeltiyoruz:
-            if (isset($productsData['id'])) {
-                $productsData = [$productsData];
-            }
-
-
-            foreach ($productsData as $product) {
-                // pre_order alanı literal olarak "true" veya "false" string'i geldiği için:
-                $isPreOrder = false;
-                if (isset($product['pre_order']) && !is_array($product['pre_order'])) {
-                    $isPreOrder = filter_var($product['pre_order'], FILTER_VALIDATE_BOOLEAN); // "true" => true, "false" => false
-                }
-
-                $formattedProducts[] = [
-                    'id' => $product['id'] ?? 0,
-                    'name' => $product['name'] ?? 'İsimsiz Ürün',
-                    'stock' => $product['stock'] ?? 0,
-                    'price' => $product['price'] ?? 0,
-                    'pre_order' => $isPreOrder,
-                    'tax_type' => $product['tax_type'] ?? '0',
-                    'min_barem' => (isset($product['min_barem']) && !is_array($product['min_barem'])) ? (float) $product['min_barem'] : null,
-                    'max_barem' => (isset($product['max_barem']) && !is_array($product['max_barem'])) ? (float) $product['max_barem'] : null,
-                    'barem_step' => (isset($product['barem_step']) && !is_array($product['barem_step'])) ? (float) $product['barem_step'] : null,
-
-                    // Boş gelen XML alanları dizi (Array) olarak dönüştüğü için onu da garanti altına alıyoruz
-                    'min_order' => is_array($product['min_order']) ? 1 : ($product['min_order'] ?? 1),
-                    'max_order' => is_array($product['max_order']) ? 100 : ($product['max_order'] ?? 100)
-                ];
-            }
-        }
-
-        return $formattedProducts;
+        return $this->extractProductsFromResponse($response);
     }
+
+    //Belirli bir oyuna ve ürün ID'sine ait ürünü getirir.
 
     public function getProductByProductId(int $gameId, int $productId): array
     {
-        // İstekte oyunKodu'nu yollayarak o oyuna ait ürünleri çekiyoruz
-        $response = $this->apiClient->execute('epinUrunleri', ['oyunKodu' => $gameId, 'urunKodu' => $productId]);
+        $response = $this->apiClient->execute('epinUrunleri', [
+            'oyunKodu' => $gameId,
+            'urunKodu' => $productId
+        ]);
 
-        $formattedProducts = [];
-
-        if (isset($response['params']['epinUrunListesi']['urun'])) {
-            $productsData = $response['params']['epinUrunListesi']['urun'];
-
-
-            // Eğer sadece 1 ürün dönerse XML parser bunu tek boyutlu dizi yapar. Düzeltiyoruz:
-            if (isset($productsData['id'])) {
-                $productsData = [$productsData];
-            }
-
-            foreach ($productsData as $product) {
-                // pre_order alanı literal olarak "true" veya "false" string'i geldiği için:
-                $isPreOrder = false;
-                if (isset($product['pre_order']) && !is_array($product['pre_order'])) {
-                    $isPreOrder = filter_var($product['pre_order'], FILTER_VALIDATE_BOOLEAN); // "true" => true, "false" => false
-                }
-
-                $formattedProducts[] = [
-                    'id' => $product['id'] ?? 0,
-                    'name' => $product['name'] ?? 'İsimsiz Ürün',
-                    'stock' => $product['stock'] ?? 0,
-                    'price' => $product['price'] ?? 0,
-                    'pre_order' => $isPreOrder,
-                    'tax_type' => $product['tax_type'] ?? '0',
-                    'min_barem' => (isset($product['min_barem']) && !is_array($product['min_barem'])) ? (float) $product['min_barem'] : null,
-                    'max_barem' => (isset($product['max_barem']) && !is_array($product['max_barem'])) ? (float) $product['max_barem'] : null,
-                    'barem_step' => (isset($product['barem_step']) && !is_array($product['barem_step'])) ? (float) $product['barem_step'] : null,
-                    // Boş gelen XML alanları dizi (Array) olarak dönüştüğü için onu da garanti altına alıyoruz
-                    'min_order' => is_array($product['min_order']) ? 1 : ($product['min_order'] ?? 1),
-                    'max_order' => is_array($product['max_order']) ? 100 : ($product['max_order'] ?? 100)
-                ];
-            }
-        }
-
-        return $formattedProducts;
+        return $this->extractProductsFromResponse($response);
     }
 
 
+
+
+    // ==========================================
+    // YARDIMCI METOTLAR
+    // ==========================================
+
+    //API yanıtından ürün listesini ayıklar ve normalize eder.
+    private function extractProductsFromResponse(array $response): array
+    {
+        $productsData = $response['params']['epinUrunListesi']['urun'] ?? [];
+
+        if (empty($productsData)) {
+            return [];
+        }
+
+        // Tek bir ürün döndüğünde XML parser tek boyutlu dizi üretir, diziye sarıyoruz:
+        if (isset($productsData['id'])) {
+            $productsData = [$productsData];
+        }
+
+        return array_map([$this, 'formatProduct'], $productsData);
+    }
+
+    //Tek bir ürün verisini temizler ve tiplerini garanti altına alır.
+    private function formatProduct(array $product): array
+    {
+        // "true" / "false" string gelen pre_order alanını boolean'a çevir
+        $isPreOrder = false;
+        if (isset($product['pre_order']) && !is_array($product['pre_order'])) {
+            $isPreOrder = filter_var($product['pre_order'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        return [
+            'id' => (int) ($product['id'] ?? 0),
+            'name' => (string) ($product['name'] ?? 'İsimsiz Ürün'),
+            'stock' => (int) ($product['stock'] ?? 0),
+            'price' => (float) ($product['price'] ?? 0),
+            'pre_order' => $isPreOrder,
+            'tax_type' => (string) ($product['tax_type'] ?? '0'),
+            'min_barem' => $this->getFloatOrNull($product, 'min_barem'),
+            'max_barem' => $this->getFloatOrNull($product, 'max_barem'),
+            'barem_step' => $this->getFloatOrNull($product, 'barem_step'),
+            'min_order' => is_array($product['min_order'] ?? null) ? 1 : (int) ($product['min_order'] ?? 1),
+            'max_order' => is_array($product['max_order'] ?? null) ? 100 : (int) ($product['max_order'] ?? 100)
+        ];
+    }
+
+    //Barem değerleri dizi veya boş geldiyse null, geçerli ise float döner.
+    private function getFloatOrNull(array $data, string $key): ?float
+    {
+        if (isset($data[$key]) && !is_array($data[$key]) && $data[$key] !== '') {
+            return (float) $data[$key];
+        }
+        return null;
+    }
 }

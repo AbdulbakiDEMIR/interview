@@ -71,11 +71,14 @@
                         pinsHtml;
 
                 } else {
+                    if (result.message) {
+                        showToast(result.message, 'danger');
+                    }
                     contentDiv.innerHTML = '<div class="alert alert-danger shadow-sm"><i class="bi bi-exclamation-triangle me-2"></i> {$LANG.error}: ' + (result.message || '{$LANG.order_detail_fetch_error}') + '</div>';
                 }
             })
             .catch(error => {
-                contentDiv.innerHTML = '<div class="alert alert-danger shadow-sm"><i class="bi bi-wifi-off me-2"></i> {$LANG.conn_error_retry}</div>';
+                showToast("{$LANG.conn_error_retry}", "danger");
             });
     });
 </script>

@@ -80,11 +80,7 @@
             const diffDays = Math.ceil(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24));
 
             if (diffDays > 30) {
-                // Klasik alert yerine Bootstrap Toast gösteriyoruz
-                const toastEl = document.getElementById('errorToast');
-                const toast = new bootstrap.Toast(toastEl);
-                document.getElementById('toastMsg').innerText = "{$LANG.date_diff_error}";
-                toast.show();
+                showToast("{$LANG.date_diff_error}", "danger");
                 return;
             }
 
@@ -120,8 +116,6 @@
             fetch('/api/orders?start_date=' + start + '&end_date=' + end)
                 .then(response => response.json())
                 .then(result => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>{$LANG.list_btn}';
                     tbody.innerHTML = '';
 
                     if (result.success && result.data && result.data.length > 0) {
@@ -129,14 +123,21 @@
                         window.currentPage = 1;
                         renderTable();
                     } else {
+                        if (result.message) {
+                            showToast(result.message, 'danger');
+                        }
                         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">{$LANG.no_orders_found_date}</td></tr>';
                     }
                 })
                 .catch(error => {
-                    console.error('Ajax Hatası:', error);
+                    showToast("{$LANG.system_conn_error}", "danger");
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>{$LANG.list_btn}';
                     tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">{$LANG.system_conn_error}</td></tr>';
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>{$LANG.list_btn}';
                 });
         });
     });
@@ -204,16 +205,3 @@
         renderTable();
     }
 </script>
-
-<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
-    <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive"
-        aria-atomic="true">
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="bi bi-exclamation-octagon-fill me-2"></i> <span id="toastMsg">{$LANG.date_diff_error}</span>
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                aria-label="Close"></button>
-        </div>
-    </div>
-</div>
