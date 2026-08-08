@@ -1,0 +1,219 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-box-seam me-2"></i>{$LANG.orders_title}</h2>
+</div>
+
+<!-- Tarih Filtreleme Kartı -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form id="orderFilterForm" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">{$LANG.start_date}</label>
+                <input type="date" id="startDate" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">{$LANG.end_date}</label>
+                <input type="date" id="endDate" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-2"></i>{$LANG.list_btn}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Siparişler Tablosu -->
+<div class="card shadow-sm mb-5">
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-striped table-hover m-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>{$LANG.order_no}</th>
+                    <th>{$LANG.date}</th>
+                    <th>{$LANG.amount}</th>
+                    <th>{$LANG.status}</th>
+                    <th class="text-end">{$LANG.action}</th>
+                </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        {$LANG.orders_empty}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination Container -->
+<nav aria-label="{$LANG.order_pagination}">
+    <ul class="pagination justify-content-center" id="paginationContainer"></ul>
+</nav>
+
+
+
+<script>
+    window.currentOrders = [];
+    window.currentPage = 1;
+    window.itemsPerPage = 10;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('orderFilterForm');
+        const tbody = document.getElementById('ordersTableBody');
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        document.getElementById('startDate').value = yesterday.toISOString().split('T')[0];
+        document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+
+            const date1 = new Date(start);
+            const date2 = new Date(end);
+            const diffDays = Math.ceil(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24));
+
+            if (diffDays > 30) {
+                // Klasik alert yerine Bootstrap Toast gösteriyoruz
+                const toastEl = document.getElementById('errorToast');
+                const toast = new bootstrap.Toast(toastEl);
+                document.getElementById('toastMsg').innerText = "{$LANG.date_diff_error}";
+                toast.show();
+                return;
+            }
+
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> {$LANG.loading}';
+
+            // Skeleton Loading (home.html tarzı asimetrik iskelet tasarımı)
+            tbody.innerHTML =
+                '<tr class="placeholder-glow">' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td><span class="placeholder col-6"></span></td>' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td class="text-end"><span class="placeholder col-5 bg-secondary" style="height: 31px; border-radius: 4px;"></span></td>' +
+                '</tr>' +
+                '<tr class="placeholder-glow">' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td><span class="placeholder col-6"></span></td>' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td class="text-end"><span class="placeholder col-5 bg-secondary" style="height: 31px; border-radius: 4px;"></span></td>' +
+                '</tr>' +
+                '<tr class="placeholder-glow">' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td><span class="placeholder col-6"></span></td>' +
+                '<td><span class="placeholder col-7"></span></td>' +
+                '<td class="text-end"><span class="placeholder col-5 bg-secondary" style="height: 31px; border-radius: 4px;"></span></td>' +
+                '</tr>';
+            document.getElementById('paginationContainer').innerHTML = '';
+
+            fetch('/api/orders?start_date=' + start + '&end_date=' + end)
+                .then(response => response.json())
+                .then(result => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>{$LANG.list_btn}';
+                    tbody.innerHTML = '';
+
+                    if (result.success && result.data && result.data.length > 0) {
+                        window.currentOrders = result.data;
+                        window.currentPage = 1;
+                        renderTable();
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">{$LANG.no_orders_found_date}</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Ajax Hatası:', error);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>{$LANG.list_btn}';
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">{$LANG.system_conn_error}</td></tr>';
+                });
+        });
+    });
+
+    function renderTable() {
+        const tbody = document.getElementById('ordersTableBody');
+        const pagination = document.getElementById('paginationContainer');
+        tbody.innerHTML = '';
+        pagination.innerHTML = '';
+
+        if (window.currentOrders.length === 0) return;
+
+        const totalItems = window.currentOrders.length;
+        const totalPages = Math.ceil(totalItems / window.itemsPerPage);
+
+        const startIndex = (window.currentPage - 1) * window.itemsPerPage;
+        const endIndex = startIndex + window.itemsPerPage;
+        const pageData = window.currentOrders.slice(startIndex, endIndex);
+
+        pageData.forEach(order => {
+            let statusColor = "text-secondary";
+            let btnHtml = "";
+            let pinsHtml = ""; // Pinlerin barınacağı gizli alan
+
+
+
+            // 1. Ana Sipariş Satırı (Her zaman görünür)
+            const tr = document.createElement('tr');
+
+            // Detay sayfasına giden şık bir link butonu
+            let detailBtn = '<a href="/order/' + order.SIPARIS_NO + '" class="btn btn-sm btn-primary text-white ms-2" title="{$LANG.go_to_order_detail}">{$LANG.detail}</a>';
+
+            tr.innerHTML =
+                '<td><strong>#' + order.SIPARIS_NO + '</strong></td>' +
+                '<td>' + order.KONTROL_TARIHI + '</td>' +
+                '<td>' + order.SIPARIS_TUTARI + ' TL</td>' +
+                '<td class="' + statusColor + '">' + order.SIPARIS_DURUMU_ACIKLAMA + '</td>' +
+                '<td class="text-end">' + detailBtn + '</td>';
+            tbody.appendChild(tr);
+
+        });
+
+        if (totalPages > 1) {
+            let pagHtml = '';
+
+            pagHtml += '<li class="page-item ' + (window.currentPage === 1 ? 'disabled' : '') + '">' +
+                '<button class="page-link" onclick="changePage(' + (window.currentPage - 1) + ')">{$LANG.prev}</button></li>';
+
+            for (let i = 1; i <= totalPages; i++) {
+                pagHtml += '<li class="page-item ' + (i === window.currentPage ? 'active' : '') + '">' +
+                    '<button class="page-link" onclick="changePage(' + i + ')">' + i + '</button></li>';
+            }
+
+            pagHtml += '<li class="page-item ' + (window.currentPage === totalPages ? 'disabled' : '') + '">' +
+                '<button class="page-link" onclick="changePage(' + (window.currentPage + 1) + ')">{$LANG.next}</button></li>';
+
+            pagination.innerHTML = pagHtml;
+        }
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(window.currentOrders.length / window.itemsPerPage);
+        if (page < 1 || page > totalPages) return;
+        window.currentPage = page;
+        renderTable();
+    }
+</script>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+    <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive"
+        aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-exclamation-octagon-fill me-2"></i> <span id="toastMsg">{$LANG.date_diff_error}</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                aria-label="Close"></button>
+        </div>
+    </div>
+</div>

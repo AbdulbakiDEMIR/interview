@@ -51,6 +51,50 @@ class Main
             $api = new \Turkpin\InterviewTest\classes\Api();
             $api->getProducts();
         });
+
+        $this->router->get('/api/product', function () {
+            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api->getProductsByProductId();
+        });
+
+        $this->router->get('/api/orders', function () {
+            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api->getOrders();
+        });
+
+        $this->router->post('/api/orders', function () {
+            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api->createOrder();
+        });
+
+
+        $this->router->get('/orders', function () {
+            global $smarty;
+            $smarty->assign('template', 'orders.html');
+        });
+
+        $this->router->get('/api/order/(\d+)', function ($orderId) {
+            $api = new \Turkpin\InterviewTest\classes\Api();
+            $api->getOrderStatus($orderId);
+        });
+
+        $this->router->get('/order/(\d+)', function ($orderId) {
+            global $smarty;
+
+            $smarty->assign('orderId', $orderId);
+
+            $smarty->assign('template', 'order_detail.html');
+        });
+
+        $this->router->get('/product/(\d+)/(\d+)', function ($gameId, $productId) {
+            global $smarty;
+
+            $smarty->assign('gameId', $gameId);
+            $smarty->assign('productId', $productId);
+            $smarty->assign('template', 'product-detail.html');
+        });
+
+
         $this->router->run();
         $smarty->display('index.html');
     }

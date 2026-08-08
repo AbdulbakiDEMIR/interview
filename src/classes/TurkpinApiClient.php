@@ -45,7 +45,7 @@ class TurkpinApiClient
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
-        // PHP 8+ için curl_close sildik
+
 
         if ($response === false) {
             throw new \Exception("API Ağ Hatası: " . $error);
