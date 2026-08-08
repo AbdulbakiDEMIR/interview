@@ -1,4 +1,5 @@
 <?php
+
 namespace App\classes;
 
 use App\Exceptions\TurkpinApiException;
@@ -113,11 +114,15 @@ class Order
             return [];
         }
 
-        // Tek bir pin döndüğünde associative array gelebilir, düzeltiyoruz
-        if (is_array($epinData) && !isset($epinData[0])) {
+        if (!is_array($epinData)) {
             return [$epinData];
         }
 
-        return is_array($epinData) ? $epinData : [$epinData];
+        // Tek bir pin associative array olarak döndüğünde
+        if (!isset($epinData[0])) {
+            return [$epinData];
+        }
+
+        return $epinData;
     }
 }

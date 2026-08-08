@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests;
 
 use PHPUnit\Framework\TestCase;
@@ -40,10 +41,9 @@ class ProductTest extends TestCase
 
         // 3. Product servisimize sahte istemcimizi veriyoruz
         $productService = new Product($mockApiClient);
-        $products = $productService->getProductByProductId('1', '1');
+        $products = $productService->getProductByProductId(1, 1);
 
         // 4. DOĞRULAMALAR (Assertions):
-        $this->assertIsArray($products);
         $this->assertCount(1, $products);
 
         $this->assertArrayHasKey('id', $products[0]);

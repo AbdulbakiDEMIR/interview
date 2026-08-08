@@ -1,4 +1,5 @@
 <?php
+
 class Main
 {
     public $router;
@@ -7,7 +8,7 @@ class Main
     {
         global $lang, $smarty;
 
-        // DUZELTILDI: 'lang' key'i yoksa hata veriyordu. ?? operatoru eklendi. 
+        // DUZELTILDI: 'lang' key'i yoksa hata veriyordu. ?? operatoru eklendi.
         // isset() fonskiyonunu da kullanabilirdim ancak ?? operatorunu tercih ettim.
         $lang = $_SESSION['lang'] ?? 'tr';
 
@@ -26,7 +27,7 @@ class Main
 
         $smarty->setTemplateDir('src/templates');
 
-        // DUZELTILDI: Sabit '/tmp' yolu Windows ve farklı sunucu ortamlarında hata ürettiği için 
+        // DUZELTILDI: Sabit '/tmp' yolu Windows ve farklı sunucu ortamlarında hata ürettiği için
         // cross-platform uyumlu proje içi 'templates_c' dizini ile değiştirildi.
         $smarty->setCompileDir(__DIR__ . '/../../templates_c');
 

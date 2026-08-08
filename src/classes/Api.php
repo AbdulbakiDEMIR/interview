@@ -1,4 +1,5 @@
 <?php
+
 namespace App\classes;
 
 class Api
@@ -27,7 +28,7 @@ class Api
     }
 
     // ==========================================
-    // 2. API METODLARI 
+    // 2. API METODLARI
     // ==========================================
 
     public function getGames(): void

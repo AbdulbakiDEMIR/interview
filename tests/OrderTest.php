@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests;
 
 use PHPUnit\Framework\TestCase;
@@ -73,7 +74,6 @@ class OrderTest extends TestCase
         $orders = $orderService->getOrders('2026-08-01', '2026-08-08');
 
         // 4. DOĞRULAMALAR (Assertions):
-        $this->assertIsArray($orders);
         $this->assertCount(2, $orders); // 2 sipariş döndü mü?
 
         // Sipariş 1 Doğrulamaları:
@@ -120,7 +120,6 @@ class OrderTest extends TestCase
         $status = $orderService->getOrderStatus('26080519153501');
 
         // 4. DOĞRULAMALAR (Assertions):
-        $this->assertIsArray($status);
 
         // Sipariş 1 Doğrulamaları:
         $this->assertEquals('26080519153501', $status['SIPARIS_NO']);
