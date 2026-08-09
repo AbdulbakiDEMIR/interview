@@ -7,10 +7,10 @@ services:
       dockerfile: Dockerfile
     container_name: turkpin_interview_app
 
-    # Portu kendi bilgisayarımda 8081 portundan çalışması için ayarladım.
-    # Docker host'undaki 8081 portu, container'daki 80 portuna yönlendirilir.
+    # Portu kendi bilgisayarımda 8080 portundan çalışması için ayarladım.
+    # Docker host'undaki 8080 portu, container'daki 80 portuna yönlendirilir.
     ports:
-      - "8081:80"
+      - "8080:80"
 
     # Docker'ın host'taki klasörü, container'ın klasörüne bağlar.
     # Böylece değişiklikler anında yansır.

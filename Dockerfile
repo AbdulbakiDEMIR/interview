@@ -22,5 +22,7 @@ WORKDIR /var/www/html
 COPY . /var/www/html
 
 # Apache DocumentRoot izinlerini düzenliyoruz
-RUN chown -R www-data:www-data /var/www/html \
+RUN mkdir -p /var/www/html/templates_c \
+    && composer install --no-interaction --prefer-dist --optimize-autoloader \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/templates_c
