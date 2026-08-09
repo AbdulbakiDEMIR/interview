@@ -1,1 +1,0 @@
-{"version":2,"defects":[],"times":{"Tests\\BalanceTest::testGetOrdersWithRealXmlStructure":0.004,"Tests\\GameTest::testGetOrdersWithRealXmlStructure":0.001,"Tests\\OrderTest::testGetOrdersWithRealXmlStructure":0.001,"Tests\\OrderTest::testGetOrderStatusReturnsFormattedStatus":0,"Tests\\ProductTest::testGetProductsWithRealXmlStructure":0.001}}
