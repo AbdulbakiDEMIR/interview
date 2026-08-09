@@ -1,153 +1,104 @@
 <div class="container py-5" id="product-container">
-    <!-- Skeleton Loading -->
     <div class="row">
-        <div class="col-md-5 mb-4">
-            <div class="bg-secondary bg-opacity-10 rounded placeholder-glow d-flex align-items-center justify-content-center"
-                style="height: 400px;">
-                <span class="placeholder col-6 h-50 rounded-circle"></span>
+        <!-- Sol taraf: İmaj/İkon -->
+        <div class="col-md-5 mb-4 mb-md-0 text-center">
+            <div class="bg-light rounded p-5 d-flex flex-column align-items-center justify-content-center shadow-sm border-0 h-100"
+                style="min-height: 400px;">
+                <i class="bi bi-controller text-primary opacity-75" style="font-size: 8rem;"></i>
             </div>
         </div>
-        <div class="col-md-7">
-            <div class="placeholder-glow">
-                <h2 class="placeholder col-8 mb-4 rounded" style="height: 40px;"></h2>
-                <h4 class="placeholder col-4 mb-5 rounded" style="height: 30px;"></h4>
-                <div class="card border-0 mb-4 bg-light">
-                    <div class="card-body">
-                        <p class="placeholder col-12 mb-2"></p>
-                        <p class="placeholder col-12 mb-2"></p>
+
+        <!-- Sağ taraf: Detaylar ve Satın Alma -->
+        <div class="col-md-7 d-flex flex-column">
+            <h1 class="fw-bold mb-3 text-dark"> {$product.name} </h1>
+
+            <div id="badge" class="d-flex align-items-center flex-wrap mb-4 gap-2">
+                {if $product.stock == 0}
+                <span class="badge bg-danger fs-6 fw-normal"><i class="bi bi-box-seam me-1"></i> {$LANG.stock}: 0</span>
+                {else}
+                <span class="badge bg-success fs-6 fw-normal"><i class="bi bi-box-seam me-1"></i> {$LANG.stock}:
+                    {$product.stock}</span>
+                {/if}
+
+                {if $product.pre_order}
+                <span class="badge bg-warning text-dark fs-6 fw-normal"><i
+                        class="bi bi-clock-history me-1"></i>{$LANG.pre_order}</span>
+                {/if}
+
+                {if $product.min_barem || $product.max_barem != null}
+                <span class="badge bg-info text-dark fs-6 fw-normal"><i
+                        class="bi bi-wallet-fill me-1"></i>{$LANG.barem_product}</span>
+                {/if}
+            </div>
+
+            <h2 class="text-primary fw-bold mb-4">{$product.price} <span class="fs-4 text-muted fw-normal">TL</span>
+            </h2>
+
+            <div class="card bg-light border-0 shadow-sm mb-4">
+                <div class="card-body py-4">
+                    <h6 class="text-muted fw-bold mb-3 text-uppercase" style="letter-spacing: 1px; font-size: 0.8rem;">
+                        {$LANG.order_limits}</h6>
+                    <div class="row text-center">
+                        <div class="col-6 border-end border-secondary border-opacity-25">
+                            <div class="small text-muted mb-1">{$LANG.minimum}</div>
+                            <div class="fw-bold fs-5 text-dark">{$product.min_order}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted mb-1">{$LANG.maximum}</div>
+                            <div class="fw-bold fs-5 text-dark">{$product.max_order}</div>
+                        </div>
                     </div>
                 </div>
-                <div class="mt-5">
-                    <span class="placeholder col-5 rounded bg-primary" style="height: 50px;"></span>
+            </div>
+
+            <div class="mb-4 mt-auto">
+                <label class="form-label text-muted fw-bold small text-uppercase"
+                    style="letter-spacing: 1px;">{$LANG.quantity}</label>
+                <div class="input-group input-group-lg shadow-sm" style="max-width: 200px;">
+                    <button class="btn btn-outline-secondary border-secondary-subtle bg-white" type="button"
+                        onclick="this.nextElementSibling.stepDown()">-</button>
+                    <input type="number" id="p-quantity"
+                        class="form-control text-center fw-bold border-secondary-subtle" value="{$product.min_order}"
+                        min="{$product.min_order}" max="{$product.max_order}" step="1">
+                    <button class="btn btn-outline-secondary border-secondary-subtle bg-white" type="button"
+                        onclick="this.previousElementSibling.stepUp()">+</button>
                 </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex">
+                <button id="buy-button" class="btn btn-primary btn-lg px-5 shadow-sm" type="button"
+                    onclick="createOrder()">
+                    <i class="bi bi-cart-check me-2"></i>{$LANG.buy}
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let currentProduct = null;
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const gameId = '{$gameId}';
-        const productId = '{$productId}';
-        const container = document.getElementById('product-container');
-
-        fetch('/api/product?game_id=' + gameId + '&product_id=' + productId)
-            .then(response => response.json())
-            .then(result => {
-                if (result.success && result.data.length > 0) {
-                    const product = result.data[0];
-                    currentProduct = product; // Set global variable
-                    document.title = product.name + ' - {$LANG.title}';
-
-                    const isBarem = product.min_barem !== null;
-                    const limitMin = isBarem ? product.min_barem + ' TL' : product.min_order;
-                    const limitMax = isBarem ? product.max_barem + ' TL' : (product.max_order > 0 ? product.max_order : 'Limitsiz');
-
-                    const qtyMin = isBarem ? product.min_barem : product.min_order;
-                    const qtyMax = isBarem ? product.max_barem : (product.max_order > 0 ? product.max_order : '');
-                    const qtyStep = isBarem ? product.barem_step : 1;
-
-                    let badgeHtml = '';
-                    if (product.stock == 0) {
-                        badgeHtml += '<span class="badge bg-danger fs-6 fw-normal"><i class="bi bi-box-seam me-1"></i> {$LANG.stock}: 0</span>';
-                    } else {
-                        badgeHtml += '<span class="badge bg-success fs-6 fw-normal"><i class="bi bi-box-seam me-1"></i> {$LANG.stock}: ' + product.stock + '</span>';
-                    }
-
-                    if (product.pre_order) {
-                        badgeHtml += ' <span class="badge bg-warning text-dark fs-6 fw-normal"><i class="bi bi-clock-history me-1"></i>{$LANG.pre_order}</span>';
-                    }
-
-                    if (product.min_barem || product.max_barem != null) {
-                        badgeHtml += ' <span class="badge bg-info text-dark fs-6 fw-normal"><i class="bi bi-wallet-fill me-1"></i>{$LANG.barem_product}</span>';
-                    }
-
-                    // FINAL CONTENT INJECTION
-                    container.innerHTML = `
-                        <div class="row">
-                            <!-- Sol taraf: İmaj/İkon -->
-                            <div class="col-md-5 mb-4 mb-md-0 text-center">
-                                <div class="bg-light rounded p-5 d-flex flex-column align-items-center justify-content-center shadow-sm border-0 h-100"
-                                    style="min-height: 400px;">
-                                    <i class="bi bi-controller text-primary opacity-75" style="font-size: 8rem;"></i>
-                                </div>
-                            </div>
-
-                            <!-- Sağ taraf: Detaylar ve Satın Alma -->
-                            <div class="col-md-7 d-flex flex-column">
-                                <h1 class="fw-bold mb-3 text-dark">` + product.name + `</h1>
-
-                                <div class="d-flex align-items-center mb-4 gap-2">
-                                    ` + badgeHtml + `
-                                </div>
-
-                                <h2 class="text-primary fw-bold mb-4">` + product.price + ` <span class="fs-4 text-muted fw-normal">TL</span></h2>
-
-                                <div class="card bg-light border-0 shadow-sm mb-4">
-                                    <div class="card-body py-4">
-                                        <h6 class="text-muted fw-bold mb-3 text-uppercase" style="letter-spacing: 1px; font-size: 0.8rem;">
-                                            {$LANG.order_limits}</h6>
-                                        <div class="row text-center">
-                                            <div class="col-6 border-end border-secondary border-opacity-25">
-                                                <div class="small text-muted mb-1">{$LANG.minimum}</div>
-                                                <div class="fw-bold fs-5 text-dark">` + limitMin + `</div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="small text-muted mb-1">{$LANG.maximum}</div>
-                                                <div class="fw-bold fs-5 text-dark">` + limitMax + `</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-4 mt-auto">
-                                    <label class="form-label text-muted fw-bold small text-uppercase"
-                                        style="letter-spacing: 1px;">{$LANG.quantity}</label>
-                                    <div class="input-group input-group-lg shadow-sm" style="max-width: 200px;">
-                                        <button class="btn btn-outline-secondary border-secondary-subtle bg-white" type="button"
-                                            onclick="this.nextElementSibling.stepDown()">-</button>
-                                        <input type="number" id="p-quantity"
-                                            class="form-control text-center fw-bold border-secondary-subtle" 
-                                            value="` + qtyMin + `" min="` + qtyMin + `" max="` + qtyMax + `" step="` + qtyStep + `">
-                                        <button class="btn btn-outline-secondary border-secondary-subtle bg-white" type="button"
-                                            onclick="this.previousElementSibling.stepUp()">+</button>
-                                    </div>
-                                </div>
-
-                                <div class="d-grid gap-2 d-md-flex">
-                                    <button id="buy-button" class="btn btn-primary btn-lg px-5 shadow-sm" type="button" onclick="createOrder()">
-                                        <i class="bi bi-cart-check me-2"></i>{$LANG.buy}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else if (result.message) {
-                    showToast(result.message, 'danger');
-                } else {
-                    showToast('{$LANG.no_products_found}', 'warning');
-                }
-            })
-            .catch(error => {
-                showToast(error, 'danger');
-                console.error('API Error:', error);
-            });
-    });
 
     function createOrder() {
         document.getElementById('buy-button').disabled = true;
 
-        const gameId = '{$gameId}';
-        const productId = '{$productId}';
+        const gameId = '{$game_id}';
+        const productId = '{$product.id}';
         let amount = document.getElementById('p-quantity').value;
-        const pre_order = currentProduct.pre_order;
-        let barem = null;
+        const min_order = Number('{$product.min_order}');
+        const max_order = Number('{$product.max_order}');
+        const pre_order = '{$product.pre_order}';
+        const min_barem = '{$product.min_barem}' == "" ? null : '{$product.min_barem}';
+        const max_barem = '{$product.max_barem}' == "" ? null : '{$product.max_barem}';
         const user = "1";
 
+        const numAmount = Number(amount);
+        if (numAmount > max_order || numAmount < min_order) {
+            showToast("{$LANG.order_limits_error}", "danger");
+            document.getElementById('buy-button').disabled = false;
+            return;
+        }
 
-        if (currentProduct.min_barem !== null || currentProduct.max_barem !== null) {
+        let barem = null;
+        if (min_barem !== null && max_barem !== null) {
             barem = amount;
             amount = 1;
         }
@@ -163,13 +114,14 @@
                 amount: amount,
                 user: user,
                 pre_order: pre_order,
+                min_order: min_order,
+                max_order: max_order,
                 ...(barem !== null ? { barem: barem } : {})
             }),
         })
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    console.log(result);
                     showSuccessModal(result.data.siparisNo);
                 } else {
                     showToast(result.message);

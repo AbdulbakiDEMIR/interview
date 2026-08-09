@@ -82,7 +82,16 @@ class Main
         //sayfalar
         $this->router->get('/', function () {
             global $smarty;
-            $smarty->assign('template', 'home.html');
+            $games = [];
+            try {
+                $gameManager = new \App\classes\Game();
+                $games = $gameManager->getAllGames();
+            } catch (\Exception $e) {
+                // API hatası oluşursa boş dizi kalır
+                $games = [];
+            }
+            $smarty->assign('games', $games);
+            $smarty->assign('template', 'products.html');
         });
 
         $this->router->get('/balance', function () {
@@ -100,21 +109,69 @@ class Main
             $smarty->assign('template', 'orders.html');
         });
 
+
         $this->router->get('/order/(\d+)', function ($orderId) {
             global $smarty;
 
-            $smarty->assign('orderId', $orderId);
+            try {
+                $orderManager = new \App\classes\Order();
+                $order = $orderManager->getOrderStatus((string) $orderId);
+                if (empty($order)) {
+                    $smarty->assign('template', '404.html');
+                    return;
+                }
+            } catch (\Exception $e) {
+                $smarty->assign('template', '404.html');
+                return;
+            }
+
+            $smarty->assign('order', $order);
             $smarty->assign('template', 'order_detail.html');
         });
+
 
         $this->router->get('/product/(\d+)/(\d+)', function ($gameId, $productId) {
             global $smarty;
 
-            $smarty->assign('gameId', $gameId);
-            $smarty->assign('productId', $productId);
-            $smarty->assign('template', 'product-detail.html');
+            try {
+                $productManager = new \App\classes\Product();
+                $products = $productManager->getProductByProductId((int) $gameId, (int) $productId);
+
+                // Ürün listesi boşsa 404 sayfasına yönlendir
+                if (empty($products)) {
+                    $smarty->assign('template', '404.html');
+                    return;
+                }
+
+                // Bulunan ilk ürünü template'e aktar
+                $smarty->assign('game_id', $gameId);
+                $smarty->assign('product', $products[0]);
+                $smarty->assign('template', 'product-detail.html');
+
+            } catch (\Exception $e) {
+                // Ürün bulunamadığında veya API hata verdiğinde 404 göster
+                $smarty->assign('template', '404.html');
+            }
         });
 
+
+
+        // 404 Sayfa Bulunamadı
+        $this->router->set404(function () {
+            global $smarty;
+            http_response_code(404);
+
+            if (isset($_SERVER['REQUEST_URI']) && str_starts_with($_SERVER['REQUEST_URI'], '/api/')) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'API uç noktası bulunamadı.'
+                ]);
+                exit;
+            }
+
+            $smarty->assign('template', '404.html');
+        });
 
         $this->router->run();
         $smarty->display('index.html');

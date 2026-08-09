@@ -69,6 +69,25 @@ class Order
             'character' => $user,
         ];
 
+        try {
+            $productManager = new Product();
+            $product = $productManager->getProductByProductId($gameId, $productId);
+            if (empty($product)) {
+                throw new TurkpinApiException("Ürün bulunamadı.", "PRODUCT_NOT_FOUND");
+            }
+        } catch (TurkpinApiException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            throw new TurkpinApiException("Ürün bulunamadı.", "PRODUCT_NOT_FOUND");
+        }
+
+        $minOrder = $product[0]['min_order'];
+        $maxOrder = $product[0]['max_order'];
+
+        if ($amount < $minOrder || $amount > $maxOrder) {
+            throw new TurkpinApiException("Sipariş miktarı belirtilen limitlerin dışında.", "ORDER_LIMITS_ERROR");
+        }
+
         if ($preOrder) {
             $params['pre_order'] = true;
         }

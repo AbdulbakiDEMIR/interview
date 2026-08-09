@@ -2,6 +2,9 @@
     <div class="col-auto">
         <select class="form-select" id="games">
             <option value="">{$LANG.select_game}</option>
+            {foreach $games as $id => $name}
+            <option value="{$id}">{$name}</option>
+            {/foreach}
         </select>
     </div>
 </div>
@@ -20,34 +23,7 @@
         const gamesSelect = document.getElementById('games');
         const productList = document.getElementById('product-list');
 
-        // ==========================================
-        // 1. OYUNLARI ÇEKME KISMI
-        // ==========================================
-        fetch('/api/games')
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    gamesSelect.innerHTML = '<option value="">{$LANG.select_game}</option>';
-                    for (const [id, name] of Object.entries(result.data)) {
-                        const option = document.createElement('option');
-                        option.value = id;
-                        option.textContent = name;
-                        gamesSelect.appendChild(option);
-                    }
-                } else {
-                    showToast('{$LANG.games_load_error}: ' + (result.message || ''), 'danger');
-                    gamesSelect.innerHTML = '<option value="">{$LANG.error_occurred}</option>';
-                }
-            })
-            .catch(error => {
-                showToast('{$LANG.connection_error}', 'danger');
-                console.error('{$LANG.ajax_error}', error);
-                gamesSelect.innerHTML = '<option value="">{$LANG.connection_error}</option>';
-            });
 
-        // ==========================================
-        // 2. OYUN SEÇİLİNCE ÜRÜNLERİ ÇEKME KISMI
-        // ==========================================
         gamesSelect.addEventListener('change', function () {
             gamesSelect.disabled = true;
             const gameId = this.value;

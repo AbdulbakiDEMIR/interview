@@ -1,84 +1,34 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-file-earmark-text me-2"></i>{$LANG.order_detail_title} (#{$orderId})</h2>
-    <a href="/orders" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>{$LANG.go_back}</a>
+    <h2><i class="bi bi-file-earmark-text me-2"></i>{$LANG.order_detail_title} (#{$order.SIPARIS_NO})</h2>
 </div>
 
 <div class="card shadow-sm mb-4 border-0">
     <div class="card-body" id="orderDetailContent">
-        <!-- Skeleton Loading Animasyonu -->
-        <div class="placeholder-glow">
-            <span class="placeholder col-4 mb-2 rounded bg-secondary"></span><br>
-            <span class="placeholder col-6 mb-2 rounded bg-secondary"></span><br>
-            <span class="placeholder col-8 mb-4 rounded bg-secondary"></span>
 
-            <h5 class="mt-4"><span class="placeholder col-3 rounded bg-secondary"></span></h5>
-            <div class="p-4 bg-light border rounded mt-3">
-                <span class="placeholder col-12 mb-2 rounded bg-secondary"></span>
-                <span class="placeholder col-8 rounded bg-secondary"></span>
+        <div class="row mb-4 bg-light p-4 rounded">
+            <div class="col-md-6">
+                <p class="mb-1 text-muted small text-uppercase fw-bold">{$LANG.order_status_label}</p>
+                <h5 class="mb-4">{$order.SIPARIS_DURUMU_ACIKLAMA}</h5>
+                <p class="mb-1 text-muted small text-uppercase fw-bold">{$LANG.control_date}</p>
+                <p class="fw-bold mb-0">{$order.KONTROL_TARIHI}</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="mb-1 text-muted small text-uppercase fw-bold">{$LANG.order_amount}</p>
+                <h2 class="text-primary fw-bold">{$order.SIPARIS_TUTARI} <span class="fs-5 text-dark">TL</span></h2>
             </div>
         </div>
+        <h4 class="mb-3 mt-5"><i class="bi bi-key me-2"></i>{$LANG.epin_passwords}</h4>
+        <div class="row g-3">
+            {foreach $order.EPIN_LIST as $pin}
+            <div class="col-md-6">
+                <div class="p-3 border rounded shadow-sm bg-white h-100 border-start border-success border-4">
+                    <div class="text-muted small mb-1">{$pin.desc} (ID: {$pin.id})</div>
+                    <div class="fs-5 text-dark fw-bold user-select-all">{$pin.code}</div>
+                </div>
+            </div>
+            {/foreach}
+        </div>
+
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Smarty'den gelen sipariş ID'sini değişkene alıyoruz
-        const orderId = '{$orderId}';
-        const contentDiv = document.getElementById('orderDetailContent');
-
-        // Sipariş API'sine istek atıyoruz
-        fetch('/api/order/' + orderId)
-            .then(response => response.json())
-            .then(result => {
-                if (result.success && result.data) {
-                    const order = result.data;
-
-                    let statusColor = "text-secondary";
-                    if (order.SIPARIS_DURUMU == "2") statusColor = "text-success fw-bold";
-                    else if (order.SIPARIS_DURUMU == "3") statusColor = "text-danger fw-bold";
-
-                    // Pinleri HTML Card formatına çeviriyoruz
-                    let pinsHtml = '<div class="alert alert-secondary">{$LANG.no_pin_in_order}</div>';
-                    if (order.EPIN_LIST && (Array.isArray(order.EPIN_LIST) ? order.EPIN_LIST.length > 0 : Object.keys(order.EPIN_LIST).length > 0)) {
-                        let pins = Array.isArray(order.EPIN_LIST) ? order.EPIN_LIST : [order.EPIN_LIST];
-                        pinsHtml = '<div class="row g-3">';
-                        for (let i = 0; i < pins.length; i++) {
-                            let pin = pins[i];
-                            pinsHtml += '<div class="col-md-6">' +
-                                '<div class="p-3 border rounded shadow-sm bg-white h-100 border-start border-success border-4">' +
-                                '<div class="text-muted small mb-1">' + (pin.desc || '{$LANG.product}') + ' (ID: ' + pin.id + ')</div>' +
-                                '<div class="fs-5 text-dark fw-bold user-select-all">' + pin.code + '</div>' +
-                                '</div></div>';
-                        }
-                        pinsHtml += '</div>';
-                    }
-
-                    // Detayları Ekrana Basıyoruz
-                    contentDiv.innerHTML =
-                        '<div class="row mb-4 bg-light p-4 rounded">' +
-                        '<div class="col-md-6">' +
-                        '<p class="mb-1 text-muted small text-uppercase fw-bold">{$LANG.order_status_label}</p>' +
-                        '<h5 class="' + statusColor + ' mb-4">' + order.SIPARIS_DURUMU_ACIKLAMA + '</h5>' +
-                        '<p class="mb-1 text-muted small text-uppercase fw-bold">{$LANG.control_date}</p>' +
-                        '<p class="fw-bold mb-0">' + order.KONTROL_TARIHI + '</p>' +
-                        '</div>' +
-                        '<div class="col-md-6 text-md-end">' +
-                        '<p class="mb-1 text-muted small text-uppercase fw-bold">{$LANG.order_amount}</p>' +
-                        '<h2 class="text-primary fw-bold">' + order.SIPARIS_TUTARI + ' <span class="fs-5 text-dark">TL</span></h2>' +
-                        '</div>' +
-                        '</div>' +
-                        '<h4 class="mb-3 mt-5"><i class="bi bi-key me-2"></i>{$LANG.epin_passwords}</h4>' +
-                        pinsHtml;
-
-                } else {
-                    if (result.message) {
-                        showToast(result.message, 'danger');
-                    }
-                    contentDiv.innerHTML = '<div class="alert alert-danger shadow-sm"><i class="bi bi-exclamation-triangle me-2"></i> {$LANG.error}: ' + (result.message || '{$LANG.order_detail_fetch_error}') + '</div>';
-                }
-            })
-            .catch(error => {
-                showToast("{$LANG.conn_error_retry}", "danger");
-            });
-    });
-</script>
+<a href="/orders" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>{$LANG.go_back}</a>

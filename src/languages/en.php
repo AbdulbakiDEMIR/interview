@@ -70,5 +70,8 @@ $lang = [
     'credit_limit' => 'Credit Limit',
     'bonus_balance' => 'Bonus Balance',
     'total_spending' => 'Total Spending',
-    'currency_tl' => 'TL',
+    'currency' => 'TL',
+    'error_description' => 'The page or product you are looking for could not be found.',
+    'back_to_home' => 'Back to Home',
+    'order_limits_error' => 'Order quantity is outside the specified limits!',
 ];

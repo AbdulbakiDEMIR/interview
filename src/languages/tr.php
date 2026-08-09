@@ -69,5 +69,8 @@ $lang = [
     'credit_limit' => 'Kredi Limiti',
     'bonus_balance' => 'Bonus Bakiye',
     'total_spending' => 'Toplam Harcama',
-    'currency_tl' => 'TL',
+    'currency' => 'TL',
+    'error_description' => 'Aradığınız sayfa veya ürün bulunamadı.',
+    'back_to_home' => 'Ana Sayfaya Dön',
+    'order_limits_error' => 'Sipariş miktarı belirtilen limitlerin dışında!',
 ];

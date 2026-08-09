@@ -80,8 +80,8 @@ class Api
 
         $orderManager = new Order();
         $orders = $orderManager->getOrders((string) $startDate, (string) $endDate);
-        $this->successResponse($orders);
 
+        $this->successResponse($orders);
     }
 
     public function getOrderStatus($orderId): void

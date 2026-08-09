@@ -70,7 +70,8 @@ class TurkpinApiClient
         curl_setopt_array($ch, [
             CURLOPT_URL => $this->apiUrl,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_TIMEOUT => 90,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => ['DATA' => $xmlPayload]
         ]);
@@ -79,10 +80,14 @@ class TurkpinApiClient
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
 
+        $logResponse = (is_string($response) && mb_strlen($response) > 2000)
+            ? mb_substr($response, 0, 2000) . '... [Truncated due to length]'
+            : $response;
+
         $this->logger->info("Turkpin API İsteği", [
             'url' => $this->apiUrl,
             'http_code' => $httpCode,
-            'response' => $response,
+            'response' => $logResponse,
             'curl_error' => $error
         ]);
 
