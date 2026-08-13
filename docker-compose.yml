@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: turkpin_interview_app
+
+    # Portu kendi bilgisayarımda 8085 portunu seçtim
+    # 8085 seçmemdeki sebep diğer uygulamalarla çakışma yaşanmaması için.
+    # Docker host'undaki 8085 portu, container'daki 80 portuna yönlendirilir.
+    ports:
+      - "8085:80"
+
+    # Docker'ın host'taki klasörü, container'ın klasörüne bağlar.
+    # Böylece değişiklikler anında yansır.
+    volumes:
+      - .:/var/www/html
+
+    # .env dosyasını container'a aktarır.
+    env_file:
+      - .env
+
+    # Container'ın otomatik yeniden başlamasını sağlar.
+    restart: unless-stopped
